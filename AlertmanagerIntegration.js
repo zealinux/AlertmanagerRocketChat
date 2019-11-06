@@ -4,45 +4,42 @@ class Script {
     }) {
         console.log(request.content);
 
-        var alertColor = "warning";
-        if (request.content.status == "resolved") {
+        let alertColor = "warning";
+        let status = request.content.status;
+
+        if (status == "resolved") {
             alertColor = "good";
-        } else if (request.content.status == "firing") {
+        } else if (status == "firing") {
             alertColor = "danger";
         }
 
         let finFields = [];
-        for (i = 0; i < request.content.alerts.length; i++) {
-            var endVal = request.content.alerts[i];
-            var elem = {
-                title: "alertname: " + endVal.labels.alertname,
-                value: "*instance:* " + endVal.labels.instance,
+        let alerts = request.content.alerts;
+
+        alerts.forEach((alert, _) => {
+            let labels = alert.labels;
+            let elem = {
+                title: "alertname: " + labels.alertname,
+                value: "*instance:* " + labels.instance,
                 short: false
             };
 
             finFields.push(elem);
 
-            if (!!endVal.annotations.summary) {
-                finFields.push({
-                    title: "summary",
-                    value: endVal.annotations.summary
-                });
-            }
+            let annotations = alert.annotations;
+            let titles = ["summary", "severity", "description"];
 
-            if (!!endVal.annotations.severity) {
-                finFields.push({
-                    title: "severity",
-                    value: endVal.annotations.severity
-                });
-            }
+            titles.forEach((item, _) => {
+                let annotation = annotations[item];
 
-            if (!!endVal.annotations.description) {
-                finFields.push({
-                    title: "description",
-                    value: endVal.annotations.description
-                });
-            }
-        }
+                if (!!annotation) {
+                    finFields.push({
+                        title: item,
+                        value: annotation
+                    });
+                }
+            })
+        });
 
         return {
             content: {
@@ -53,12 +50,6 @@ class Script {
                     title: "Prometheus notification",
                     fields: finFields
                 }]
-            }
-        };
-
-        return {
-            error: {
-                success: false
             }
         };
     }
